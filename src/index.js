@@ -13,7 +13,7 @@ const refs = {
     loadMore: document.querySelector(".load-more"),
     page:1,
     totalPages:0,
-    limit:40
+    limit:3
 }
 
 //Listeners 
@@ -24,23 +24,24 @@ refs.loadMore.addEventListener("click",handleSubmit);
 // Фетчим фото по сабмиту
 
 function handleSubmit(e) {
-    if(e.target.nodeName !== 'BUTTON') {
 
-      
+    e.preventDefault();
+    
+    if(e.target.nodeName !== 'BUTTON') {
+      refs.page = 1;
+      refs.gallery.textContent = "";
     }
-  e.preventDefault();
-  refs.page = 1;
-  fetchPhotos()
-  .then(result =>result.hits.length===0?Notiflix.Notify.failure(refs.failureMessage):renderMarkup(result.hits))
-.catch(error => Notiflix.Notify.failure(error));
+ 
+   fetchPhotos()
+   .then(result =>result.hits.length===0?Notiflix.Notify.failure(refs.failureMessage):renderMarkup(result.hits))
+   .catch(error => Notiflix.Notify.failure(error));
    refs.page+=1;
-   refs.form.searchQuery.value = "";
+   
 }
 
 async function fetchPhotos () {
      
   const response =  await fetch(`${refs.baseUrl}?key=${refs.KEY}&q=${refs.form.searchQuery.value}&image_type=photo&orientation=horizontal&safesearch=true&page=${refs.page}&per_page=${refs.  limit}`);
-  refs.page+=1;
   return response.json();
   
 }
