@@ -8,12 +8,13 @@ const refs = {
     KEY: '38590666-b4e4facc0390580085af70521',
     baseUrl: 'https://pixabay.com/api/',
     failureMessage:  "Sorry, there are no images matching your search query. Please try again.",
+    limitMessage: "We're sorry, but you've reached the end of search results.",
     gallery: document.querySelector(".gallery"),
     form: document.querySelector(".search-form"),
     loadMore: document.querySelector(".load-more"),
     page:1,
     totalPages:0,
-    limit:3
+    limit:10
 }
 
 //Listeners 
@@ -21,9 +22,9 @@ const refs = {
 refs.form.addEventListener("submit", handleSubmit);
 refs.loadMore.addEventListener("click",handleSubmit);
    
-// Фетчим фото по сабмиту
+// Sumblit Handle
 
-function handleSubmit(e) {
+ async function handleSubmit(e) {
 
     e.preventDefault();
     
@@ -31,22 +32,49 @@ function handleSubmit(e) {
       refs.page = 1;
       refs.gallery.textContent = "";
     }
+   try {
+
+   const result = await fetchPhotos(refs.form.searchQuery.value);
+   
+    refs.totalPages = (result.totalHits/refs.limit);   // Check for the last page
+     
+    if(Math.ceil(refs.totalPages) < refs.page && result.hits.length > 0) {
+      refs.loadMore.classList.add("hidden");  
+      return Notiflix.Notify.failure(refs.limitMessage);
+     }
+    if(result.hits.length===0) {
+      return Notiflix.Notify.warning(refs.failureMessage);
  
-   fetchPhotos()
-   .then(result =>result.hits.length===0?Notiflix.Notify.failure(refs.failureMessage):renderMarkup(result.hits))
-   .catch(error => Notiflix.Notify.failure(error));
-   refs.page+=1;
+     } 
+   
+    if(refs.page ===1) {
+
+      Notiflix.Notify.info(`Hooray! We found ${result.totalHits} images.`);
+    }
+         
+      renderMarkup(result.hits);
+      refs.page+=1;
+      refs.loadMore.classList.remove("hidden");
+
+
+  }  catch (error) {
+
+    Notiflix.Notify.failure(error)
+  }
    
 }
 
-async function fetchPhotos () {
+// Fetch photos
+
+async function fetchPhotos (searchQuery) {
      
-  const response =  await fetch(`${refs.baseUrl}?key=${refs.KEY}&q=${refs.form.searchQuery.value}&image_type=photo&orientation=horizontal&safesearch=true&page=${refs.page}&per_page=${refs.  limit}`);
+  const response =  await fetch(`${refs.baseUrl}?key=${refs.KEY}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${refs.page}&per_page=${refs.limit}`);
   return response.json();
   
 }
 
-// Рендерим разметку
+// Render markup
+
 function renderMarkup(images) {
 
         const markup = images.reduce((html,{webformatURL,largeImageURL,tags,likes,views,comments,downloads} ) => {
