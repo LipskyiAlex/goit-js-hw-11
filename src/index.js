@@ -1,6 +1,13 @@
 import Notiflix from 'notiflix';
-import simpleLightbox from 'simplelightbox';
+import SimpleLightbox from 'simplelightbox';
 import "simplelightbox/dist/simple-lightbox.min.css";
+
+
+let gallery = new SimpleLightbox(".gallery a.slb-item", {
+
+  captionsDelay: 250,
+});
+
 
 // refs
 const refs = {
@@ -21,13 +28,22 @@ const refs = {
 
 refs.form.addEventListener("submit", handleSubmit);
 refs.loadMore.addEventListener("click",handleSubmit);
+refs.gallery.addEventListener("click", showImage);
+
+function showImage (e) {
+  
+  const clickedElement = e.target.closest('a');
+  if (!clickedElement) return;
+
+  gallery.open(clickedElement.getAttribute('href'));
+}
    
 // Sumblit Handle
 
  async function handleSubmit(e) {
 
     e.preventDefault();
-    
+
     if(e.target.nodeName !== 'BUTTON') {
       refs.page = 1;
       refs.gallery.textContent = "";
@@ -78,7 +94,8 @@ async function fetchPhotos (searchQuery) {
 function renderMarkup(images) {
 
         const markup = images.reduce((html,{webformatURL,largeImageURL,tags,likes,views,comments,downloads} ) => {
-         return html+`<div class="photo-card">
+         return html+` <a href="${largeImageURL}" class="slb-item">
+         <div class="photo-card">
          <img src="${webformatURL}" alt="${tags}" width="300px" loading="lazy" />
          <div class="info">
            <p class="info-item">
@@ -94,8 +111,11 @@ function renderMarkup(images) {
              <b>Downloads ${downloads}</b>
            </p>
          </div>
-       </div>`
+       </div>
+       </a>`
      },"")   
 
      refs.gallery.insertAdjacentHTML("beforeend",markup);
 }
+
+
