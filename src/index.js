@@ -1,12 +1,7 @@
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import "simplelightbox/dist/simple-lightbox.min.css";
-
-
-let gallery = new SimpleLightbox(".gallery a.slb-item", {
-
-  captionsDelay: 250,
-});
+new SimpleLightbox(".gallery a");
 
 
 // refs
@@ -94,9 +89,11 @@ async function fetchPhotos (searchQuery) {
 function renderMarkup(images) {
 
         const markup = images.reduce((html,{webformatURL,largeImageURL,tags,likes,views,comments,downloads} ) => {
-         return html+` <a href="${largeImageURL}" class="slb-item">
+         return html+` 
          <div class="photo-card">
+         <a href="${largeImageURL}">
          <img src="${webformatURL}" alt="${tags}" width="300px" loading="lazy" />
+         </a>
          <div class="info">
            <p class="info-item">
              <b>Likes ${likes}</b>
@@ -112,7 +109,7 @@ function renderMarkup(images) {
            </p>
          </div>
        </div>
-       </a>`
+       `
      },"")   
 
      refs.gallery.insertAdjacentHTML("beforeend",markup);
