@@ -2,6 +2,8 @@ import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import "simplelightbox/dist/simple-lightbox.min.css";
 import { fetchImages } from './pixaby-api';
+import { debounce, throttle } from 'lodash';
+
 
 const gallery = document.querySelector(".gallery");
 const form = document.querySelector(".search-form");
@@ -12,48 +14,53 @@ const refs = {
     limitMessage: "We're sorry, but you've reached the end of search results.",
     page:1,
     totalPages:0,
-    limit:10,
+    limit:10
 }
+
+ const lightbox = new SimpleLightbox(".gallery a");
 
 //Listeners 
 
 form.addEventListener("submit", handleSubmit);
 
-// Sumblit Handle
+// Sumblit Handleser4
 
  async function handleSubmit(e) {
  
     e.preventDefault(); 
+
+     let query = form.searchQuery.value.trim();
+
+     if(query === '') {
+
+      return Notiflix.Notify.failure("The field can't be empty! Please type at least 1 character");
+     }
      
       gallery.textContent = "";
     
    try {
    
-  
-   const result = await fetchImages(form.searchQuery.value,refs.page,refs.limit);   
+   const result = await fetchImages(query,refs.page,refs.limit);   
 
-    refs.totalPages = (result.totalHits/refs.limit);   // Check for the last page
+   if(result.hits.length===0) {
+    return Notiflix.Notify.warning(refs.failureMessage);
+   }  
+
+    refs.totalPages = (result.totalHits/refs.limit); 
+    // Check for the last page
      
     if(Math.ceil(refs.totalPages) < refs.page && result.hits.length > 0) {
      
       return Notiflix.Notify.failure(refs.limitMessage);
      }
-
-    if(result.hits.length===0) {
-      return Notiflix.Notify.warning(refs.failureMessage);
-     } 
    
-    if(refs.page ===1) {
-      Notiflix.Notify.info(`Hooray! We found ${result.totalHits} images.`);
-    }
-         
-  
-      renderMarkup(result.hits);
-      refs.page+=1;
+     renderMarkup(result.hits);
+      simpleLightbox = new SimpleLightbox(".gallery a").refresh();
+     Notiflix.Notify.info(`Hooray! We found ${result.totalHits} images.`);
         
   }  catch (error) {
 
-    Notiflix.Notify.failure(error)
+    Notiflix.Notify.failure("Something went wrong, please try again later");
   }
    
 }
@@ -69,41 +76,54 @@ function renderMarkup(images) {
          <img src="${webformatURL}" alt="${tags}" width="300px" loading="lazy" />
          </a>
          <div class="info">
-           <p class="info-item">
-             <b>Likes ${likes}</b>
-           </p>
-           <p class="info-item">
-             <b>Views ${views}</b>
-           </p>
-           <p class="info-item">
-             <b>Comments ${comments}</b>
-           </p>
-           <p class="info-item">
-             <b>Downloads ${downloads}</b>
-           </p>
+           <div class="info-item">
+             <p>Likes</p>
+             <p>${likes}</p>
+           </div>
+           <div class="info-item">
+             <p>Views</p>
+             <p>${views}</p>
+           </div>
+           <div class="info-item">
+             <p>Comments</p>
+             <p>${comments}</p>
+           </div>
+           <div class="info-item">
+             <p>Downloads</p>
+             <p>${downloads}</p>
+           </div>
          </div>
        </div>
        `
      },"")   
 
      gallery.insertAdjacentHTML("beforeend",markup);
-     new SimpleLightbox(".gallery a").refresh()
-}
+     lightbox.refresh();
+
+   
+    }
 
 // Infinity scroll 
 
-window.addEventListener('scroll', async function() {
+const debounceNotify = debounce(() => {
+  Notiflix.Notify.success(refs.limitMessage);
+},1000)
+
+window.addEventListener('scroll', throttle(async function() {
+   
   // Check if the user has reached the bottom of the page
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
     // Check if there are more pages to load
     if (refs.page < refs.totalPages) {
-      refs.page++;
+     
+      refs.page+=1;
       const result = await fetchImages(form.searchQuery.value,refs.page,refs.limit);
       renderMarkup(result.hits);
-   
     }
 
-  }
-});
+  } else {
+           
+      debounceNotify();
+       } 
+  },300));
 
-//------------------------------------------------------
