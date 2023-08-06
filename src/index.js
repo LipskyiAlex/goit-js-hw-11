@@ -1,50 +1,41 @@
-import axios from 'axios';
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import "simplelightbox/dist/simple-lightbox.min.css";
+import { fetchImages } from './pixaby-api';
 
-axios.defaults.headers.common["x-api-ley"] = '38590666-b4e4facc0390580085af70521';
-axios.baseUrl = "https://pixabay.com/api/";
-
-
-
+const gallery = document.querySelector(".gallery");
+const form = document.querySelector(".search-form");
 // refs
 const refs = { 
-    KEY: '38590666-b4e4facc0390580085af70521',
-    baseUrl: 'https://pixabay.com/api/',
+
     failureMessage:  "Sorry, there are no images matching your search query. Please try again.",
     limitMessage: "We're sorry, but you've reached the end of search results.",
-    gallery: document.querySelector(".gallery"),
-    form: document.querySelector(".search-form"),
-    loadMore: document.querySelector(".load-more"),
     page:1,
     totalPages:0,
-    limit:10
+    limit:10,
 }
 
 //Listeners 
 
-refs.form.addEventListener("submit", handleSubmit);
-refs.loadMore.addEventListener("click",handleSubmit);
+form.addEventListener("submit", handleSubmit);
 
 // Sumblit Handle
 
  async function handleSubmit(e) {
-
-    e.preventDefault();
-
-    if(e.target.nodeName !== 'BUTTON') {
-      refs.page = 1;
-      refs.gallery.textContent = "";
-    }
-
+ 
+    e.preventDefault(); 
+     
+      gallery.textContent = "";
+    
    try {
+   
+  
+   const result = await fetchImages(form.searchQuery.value,refs.page,refs.limit);   
 
-   const result = await fetchPhotos(refs.form.searchQuery.value);   
     refs.totalPages = (result.totalHits/refs.limit);   // Check for the last page
      
     if(Math.ceil(refs.totalPages) < refs.page && result.hits.length > 0) {
-      refs.loadMore.classList.add("hidden");  
+     
       return Notiflix.Notify.failure(refs.limitMessage);
      }
 
@@ -59,22 +50,12 @@ refs.loadMore.addEventListener("click",handleSubmit);
   
       renderMarkup(result.hits);
       refs.page+=1;
-      refs.loadMore.classList.remove("hidden");
         
   }  catch (error) {
 
     Notiflix.Notify.failure(error)
   }
    
-}
-
-// Fetch photos
-
-async function fetchPhotos (searchQuery) {
-     
-  const response =  await fetch(`${refs.baseUrl}?key=${refs.KEY}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${refs.page}&per_page=${refs.limit}`);
-  return response.json();
-  
 }
 
 // Render markup
@@ -105,7 +86,24 @@ function renderMarkup(images) {
        `
      },"")   
 
-     refs.gallery.insertAdjacentHTML("beforeend",markup);
+     gallery.insertAdjacentHTML("beforeend",markup);
      new SimpleLightbox(".gallery a").refresh()
 }
 
+// Infinity scroll 
+
+window.addEventListener('scroll', async function() {
+  // Check if the user has reached the bottom of the page
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+    // Check if there are more pages to load
+    if (refs.page < refs.totalPages) {
+      refs.page++;
+      const result = await fetchImages(form.searchQuery.value,refs.page,refs.limit);
+      renderMarkup(result.hits);
+   
+    }
+
+  }
+});
+
+//------------------------------------------------------
