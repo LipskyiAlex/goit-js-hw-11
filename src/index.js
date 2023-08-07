@@ -19,6 +19,9 @@ const refs = {
     limit:10
 }
 
+
+ let endOfPage = false;
+
  const lightbox = new SimpleLightbox(".gallery a");
 
 //Listeners 
@@ -106,18 +109,18 @@ function renderMarkup(images) {
 
    
     }
+//----------------------------------------------
+
 
 // Infinity scroll 
 
-let endOfPage = false;
 
-const debounceNotify = debounce(() => {
+ function  limitNotify () {
   if(window.innerHeight+window.scrollY >= document.body.offsetHeight - 200) {
     Notiflix.Notify.success(refs.limitMessage);
     endOfPage = true;
   }
-
-},1000)
+}
 
 window.addEventListener('scroll', throttle(async function() {
    
@@ -133,7 +136,7 @@ window.addEventListener('scroll', throttle(async function() {
   } else {
 
     if(!endOfPage) {
-      debounceNotify();
+       limitNotify();
     } 
     
        } 
