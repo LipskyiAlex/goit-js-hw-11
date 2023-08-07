@@ -105,8 +105,11 @@ function renderMarkup(images) {
 
 // Infinity scroll 
 
+let endOfPage = false;
+
 const debounceNotify = debounce(() => {
   Notiflix.Notify.success(refs.limitMessage);
+  endOfPage = true;
 },1000)
 
 window.addEventListener('scroll', throttle(async function() {
@@ -123,7 +126,11 @@ window.addEventListener('scroll', throttle(async function() {
 
   } else {
            
+    if(!endOfPage) {
+
       debounceNotify();
+    } 
+    
        } 
   },300));
 

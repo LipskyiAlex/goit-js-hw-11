@@ -21,9 +21,17 @@ object-fit: cover;
 
 }
 
- .info {
+p {
 
+    margin-bottom: 0;
+    margin-top: 3px;
+}
+
+ .info {
+    padding-left: 5px;
+    padding-right: 5px;
     display: flex;
+     justify-content: space-between;
     text-align: center;
     vertical-align: center;
 }
