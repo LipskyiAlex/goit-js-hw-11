@@ -7,6 +7,8 @@ import { debounce, throttle } from 'lodash';
 
 const gallery = document.querySelector(".gallery");
 const form = document.querySelector(".search-form");
+const btn = document.querySelector("#button");
+
 // refs
 const refs = { 
 
@@ -22,6 +24,8 @@ const refs = {
 //Listeners 
 
 form.addEventListener("submit", handleSubmit);
+window.addEventListener("scroll", handleButton);
+btn.addEventListener("click", handleClick);
 
 // Sumblit Handleser4
 
@@ -108,8 +112,11 @@ function renderMarkup(images) {
 let endOfPage = false;
 
 const debounceNotify = debounce(() => {
-  Notiflix.Notify.success(refs.limitMessage);
-  endOfPage = true;
+  if(window.innerHeight+window.scrollY >= document.body.offsetHeight - 200) {
+    Notiflix.Notify.success(refs.limitMessage);
+    endOfPage = true;
+  }
+
 },1000)
 
 window.addEventListener('scroll', throttle(async function() {
@@ -118,19 +125,39 @@ window.addEventListener('scroll', throttle(async function() {
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
     // Check if there are more pages to load
     if (refs.page < refs.totalPages) {
-     
       refs.page+=1;
       const result = await fetchImages(form.searchQuery.value,refs.page,refs.limit);
       renderMarkup(result.hits);
     }
 
   } else {
-           
-    if(!endOfPage) {
 
+    if(!endOfPage) {
       debounceNotify();
     } 
     
        } 
   },300));
 
+
+
+// Handle scroll 
+
+function handleButton() {
+
+  if(window.scrollY > 300) {
+
+    btn.classList.add("show");
+  } else {
+
+    btn.classList.remove("show");
+  }
+};
+
+// HandleClick 
+
+function handleClick(e) {
+
+  e.preventDefault();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
