@@ -74,8 +74,8 @@ async function handleSubmit(e) {
 
     renderMarkup(result.hits); // Call the function to render markup
 
-    SimpleLightbox = new SimpleLightbox('.gallery a').refresh(); // create new gallery
-
+    let newLightbox = new SimpleLightbox('.gallery a'); // create new gallery
+    newLightbox.refresh();
     Notiflix.Notify.info(`Hooray! We found ${result.totalHits} images.`); // Send a notify with found image qty
   } catch (error) {
     // Catch an error
