@@ -1,83 +1,90 @@
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
-import "simplelightbox/dist/simple-lightbox.min.css";
+import 'simplelightbox/dist/simple-lightbox.min.css';
 import { fetchImages } from './pixaby-api';
 import { debounce, throttle } from 'lodash';
 
-
-const gallery = document.querySelector(".gallery");
-const form = document.querySelector(".search-form");
-const btn = document.querySelector("#button");
+const gallery = document.querySelector('.gallery');
+const form = document.querySelector('.search-form');
+const btn = document.querySelector('#button');
 
 // refs
-const refs = { 
+const refs = {
+  failureMessage:
+    'Sorry, there are no images matching your search query. Please try again.',
+  limitMessage: "We're sorry, but you've reached the end of search results.",
+  emptyMessage: "The field can't be empty! Please type at least 1 character",
+  errorResponseMessage: 'Something went wrong, please try again later',
+  page: 1,
+  totalPages: 0,
+  limit: 10,
+  SCROLL_DEBOUNCE_INTERVAL: 300,
+};
 
-    failureMessage:  "Sorry, there are no images matching your search query. Please try again.",
-    limitMessage: "We're sorry, but you've reached the end of search results.",
-    page:1,
-    totalPages:0,
-    limit:10
-}
+let endOfPageNotified = false; // variable in order to notify "limitMessage" only once
 
+const lightbox = new SimpleLightbox('.gallery a'); // declare lightbox gallery
 
- let endOfPage = false;
+//Listeners
 
- const lightbox = new SimpleLightbox(".gallery a");
+form.addEventListener('submit', handleSubmit);
+window.addEventListener('scroll', handleButtonVisibility);
+btn.addEventListener('click', handleClick);
 
-//Listeners 
+// handeSubmit function
 
-form.addEventListener("submit", handleSubmit);
-window.addEventListener("scroll", handleButton);
-btn.addEventListener("click", handleClick);
+async function handleSubmit(e) {
+  e.preventDefault(); //prevent default actions
 
-// Sumblit Handleser4
+  gallery.textContent = ''; // clear markup of the gallery container
 
- async function handleSubmit(e) {
- 
-    e.preventDefault(); 
+  let query = form.searchQuery.value.trim(); // value of input text without superflours spaces
 
-     let query = form.searchQuery.value.trim();
+  if (query === '') {
+    // check for empty value
 
-     if(query === '') {
-
-      return Notiflix.Notify.failure("The field can't be empty! Please type at least 1 character");
-     }
-     
-      gallery.textContent = "";
-    
-   try {
-   
-   const result = await fetchImages(query,refs.page,refs.limit);   
-
-   if(result.hits.length===0) {
-    return Notiflix.Notify.warning(refs.failureMessage);
-   }  
-
-    refs.totalPages = (result.totalHits/refs.limit); 
-    // Check for the last page
-     
-    if(Math.ceil(refs.totalPages) < refs.page && result.hits.length > 0) {
-     
-      return Notiflix.Notify.failure(refs.limitMessage);
-     }
-   
-     renderMarkup(result.hits);
-      simpleLightbox = new SimpleLightbox(".gallery a").refresh();
-     Notiflix.Notify.info(`Hooray! We found ${result.totalHits} images.`);
-        
-  }  catch (error) {
-
-    Notiflix.Notify.failure("Something went wrong, please try again later");
+    return Notiflix.Notify.failure(refs.emptyMessage);
   }
-   
-}
 
-// Render markup
+  try {
+    const result = await fetchImages(query, refs.page, refs.limit); // fetch data from pixaby-api
+
+    if (result.hits.length === 0) {
+      //Check for empty data
+      return Notiflix.Notify.warning(refs.failureMessage);
+    }
+
+    refs.totalPages = Math.ceil(result.totalHits / refs.limit); // Count total pages
+
+    if (refs.totalPages <= refs.page && result.hits.length > 0) {
+      // Check for the last page
+
+      return Notiflix.Notify.failure(refs.limitMessage);
+    }
+
+    renderMarkup(result.hits); // Call the function to render markup
+
+    SimpleLightbox = new SimpleLightbox('.gallery a').refresh(); // create new gallery
+
+    Notiflix.Notify.info(`Hooray! We found ${result.totalHits} images.`); // Send a notify with found image qty
+  } catch (error) {
+    // Catch an error
+
+    Notiflix.Notify.failure(refs.errorResponseMessage);
+  }
+}
 
 function renderMarkup(images) {
+  // Render markup
 
-        const markup = images.reduce((html,{webformatURL,largeImageURL,tags,likes,views,comments,downloads} ) => {
-         return html+` 
+  const markup = images.reduce(
+    (
+      html,
+      { webformatURL, largeImageURL, tags, likes, views, comments, downloads }
+    ) => {
+      return (
+        html +
+        ` 
          <div class="photo-card">
          <a class="gallery__link" href="${largeImageURL}">
          <img src="${webformatURL}" alt="${tags}" width="300px" loading="lazy" />
@@ -102,65 +109,78 @@ function renderMarkup(images) {
          </div>
        </div>
        `
-     },"")   
+      );
+    },
+    ''
+  );
 
-     gallery.insertAdjacentHTML("beforeend",markup);
-     lightbox.refresh();
+  gallery.insertAdjacentHTML('beforeend', markup); // Insert a markup in the index.html file
 
-   
-    }
+  lightbox.refresh(); // refresh lightbox
+}
 //----------------------------------------------
 
+// Infinity scroll
 
-// Infinity scroll 
-
-
- function  limitNotify () {
-  if(window.innerHeight+window.scrollY >= document.body.offsetHeight - 200) {
+function limitNotify() {
+  console.log('Limit notify function');
+  if (
+    !endOfPageNotified &&
+    window.innerHeight + window.scrollY >= document.body.offsetHeight - 300
+  ) {
     Notiflix.Notify.success(refs.limitMessage);
-    endOfPage = true;
+    endOfPageNotified = true;
   }
 }
 
-window.addEventListener('scroll', throttle(async function() {
-   
-  // Check if the user has reached the bottom of the page
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-    // Check if there are more pages to load
-    if (refs.page < refs.totalPages) {
-      refs.page+=1;
-      const result = await fetchImages(form.searchQuery.value,refs.page,refs.limit);
-      renderMarkup(result.hits);
+window.addEventListener(
+  'scroll',
+  throttle(function () {
+    // Check if the user has reached the bottom of the page
+
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+      console.log(refs.page);
+      console.log(refs.totalPages);
+
+      if (refs.page < refs.totalPages) {
+        // Check if there are more pages to load
+        refs.page += 1;
+
+        fetchAndRenderImages();
+      } else {
+        if (!endOfPageNotified) {
+          limitNotify();
+        }
+      }
     }
+  }, refs.SCROLL_DEBOUNCE_INTERVAL)
+);
 
-  } else {
-
-    if(!endOfPage) {
-       limitNotify();
-    } 
-    
-       } 
-  },300));
-
-
-
-// Handle scroll 
-
-function handleButton() {
-
-  if(window.scrollY > 300) {
-
-    btn.classList.add("show");
-  } else {
-
-    btn.classList.remove("show");
+async function fetchAndRenderImages() {
+  try {
+    const result = await fetchImages(
+      form.searchQuery.value,
+      refs.page,
+      refs.limit
+    );
+    renderMarkup(result.hits);
+  } catch (error) {
+    Notiflix.Notify.failure(refs.errorResponseMessage);
   }
-};
+}
+//-----------------------------------------------
 
-// HandleClick 
+function handleButtonVisibility() {
+  // Handle visiblity "to top" button
+
+  btn.classList.toggle('show', window.scrollY > 300);
+}
+
+//----------------------------------------------
 
 function handleClick(e) {
+  // Handle click on the "to top" button
 
   e.preventDefault();
-  window.scrollTo({top:0, behavior:"smooth"});
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
