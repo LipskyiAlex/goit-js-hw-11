@@ -19,7 +19,7 @@ const refs = {
   errorResponseMessage: 'Something went wrong, please try again later',
   page: 1,
   totalPages: 0,
-  LIMIT: 10,
+  LIMIT: 40,
   SCROLL_THROTTLE_INTERVAL: 300
 };
 
@@ -133,13 +133,15 @@ function renderMarkup(images) {
 // Infinity scroll
 
 function limitNotify() {
-  if (
-    !endOfPageNotified &&
-    window.innerHeight + window.scrollY >= document.body.offsetHeight - 300
-  ) {
+  
+
+  let distanceToBottom = document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
+
+   if(!endOfPageNotified && distanceToBottom < 200) {
     Notiflix.Notify.info(refs.limitMessage);
     endOfPageNotified = true;
-  }
+   }
+
 }
 
 window.addEventListener(

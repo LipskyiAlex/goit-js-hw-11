@@ -129,9 +129,24 @@ p {
   .gallery {
 
     color: #fff;
-    /* text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); */
+
     text-shadow: black 0.1em 0.1em 0.2em;
   }
+
+
+  .photo-card {
+
+    transition: transform 0.3s ease;
+  }
+
+  .photo-card:hover {
+
+    transform: scale3d(1.05,1.05,1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    
+  }
+
+
   
 
 
