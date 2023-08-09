@@ -59,6 +59,8 @@ body {
     background-color: #0056b3;
   }
 
+
+
 img {
 
 display: block;
@@ -124,6 +126,12 @@ p {
     visibility: visible;
   }
 
+  .gallery {
+
+    color: #fff;
+    /* text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); */
+    text-shadow: black 0.1em 0.1em 0.2em;
+  }
   
 
 

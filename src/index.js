@@ -2,7 +2,9 @@ import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import { fetchImages } from './pixaby-api';
-import { debounce, throttle } from 'lodash';
+import { throttle } from 'lodash';
+
+// DOM
 
 const gallery = document.querySelector('.gallery');
 const form = document.querySelector('.search-form');
@@ -17,8 +19,8 @@ const refs = {
   errorResponseMessage: 'Something went wrong, please try again later',
   page: 1,
   totalPages: 0,
-  limit: 10,
-  SCROLL_DEBOUNCE_INTERVAL: 300,
+  LIMIT: 10,
+  SCROLL_THROTTLE_INTERVAL: 300
 };
 
 let endOfPageNotified = false; // variable in order to notify "limitMessage" only once
@@ -36,9 +38,17 @@ btn.addEventListener('click', handleClick);
 async function handleSubmit(e) {
   e.preventDefault(); //prevent default actions
 
-  gallery.textContent = ''; // clear markup of the gallery container
+  // resetting default values on re-query without reloading page
+    refs.page = 1;
+    refs.totalPages = 0;
+    endOfPageNotified = false; 
+    //---------------------------------------------------------
+
+    gallery.textContent = ''; // clear markup of the gallery container
 
   let query = form.searchQuery.value.trim(); // value of input text without superflours spaces
+
+ 
 
   if (query === '') {
     // check for empty value
@@ -47,20 +57,20 @@ async function handleSubmit(e) {
   }
 
   try {
-    const result = await fetchImages(query, refs.page, refs.limit); // fetch data from pixaby-api
-
+    const result = await fetchImages(query, refs.page, refs.LIMIT); // fetch data from pixaby-api
+     
     if (result.hits.length === 0) {
       //Check for empty data
       return Notiflix.Notify.warning(refs.failureMessage);
     }
 
-    refs.totalPages = Math.ceil(result.totalHits / refs.limit); // Count total pages
+    refs.totalPages = Math.ceil(result.totalHits / refs.LIMIT); // Count total pages
 
-    if (refs.totalPages <= refs.page && result.hits.length > 0) {
-      // Check for the last page
+    // if (refs.totalPages <= refs.page && result.hits.length > 0) {
+    //   // Check for the last page
 
-      return Notiflix.Notify.failure(refs.limitMessage);
-    }
+    //   return Notiflix.Notify.failure(refs.limitMessage);
+    // }
 
     renderMarkup(result.hits); // Call the function to render markup
 
@@ -123,12 +133,11 @@ function renderMarkup(images) {
 // Infinity scroll
 
 function limitNotify() {
-  console.log('Limit notify function');
   if (
     !endOfPageNotified &&
     window.innerHeight + window.scrollY >= document.body.offsetHeight - 300
   ) {
-    Notiflix.Notify.success(refs.limitMessage);
+    Notiflix.Notify.info(refs.limitMessage);
     endOfPageNotified = true;
   }
 }
@@ -139,9 +148,7 @@ window.addEventListener(
     // Check if the user has reached the bottom of the page
 
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-      console.log(refs.page);
-      console.log(refs.totalPages);
-
+     
       if (refs.page < refs.totalPages) {
         // Check if there are more pages to load
         refs.page += 1;
@@ -153,7 +160,7 @@ window.addEventListener(
         }
       }
     }
-  }, refs.SCROLL_DEBOUNCE_INTERVAL)
+  }, refs.SCROLL_THROTTLE_INTERVAL)
 );
 
 async function fetchAndRenderImages() {
@@ -161,7 +168,7 @@ async function fetchAndRenderImages() {
     const result = await fetchImages(
       form.searchQuery.value,
       refs.page,
-      refs.limit
+      refs.LIMIT
     );
     renderMarkup(result.hits);
   } catch (error) {
