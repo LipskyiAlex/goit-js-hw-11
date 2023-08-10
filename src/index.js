@@ -30,7 +30,7 @@ const lightbox = new SimpleLightbox('.gallery a'); // declare lightbox gallery
 //Listeners
 
 form.addEventListener('submit', handleSubmit);
-window.addEventListener('scroll', handleButtonVisibility);
+
 btn.addEventListener('click', handleClick);
 
 // handeSubmit function
@@ -83,7 +83,7 @@ async function handleSubmit(e) {
     Notiflix.Notify.failure(refs.errorResponseMessage);
   }
 }
-
+//-----------------------------------------------
 function renderMarkup(images) {
   // Render markup
 
@@ -130,7 +130,18 @@ function renderMarkup(images) {
 }
 //----------------------------------------------
 
-// Infinity scroll
+
+const scrollHandler = throttle((e) => {
+
+
+  handleButtonVisibility(); // Calling the handle visiblity "to top" button
+  loadMoreHandler(e);
+
+},refs.SCROLL_THROTTLE_INTERVAL);
+
+window.addEventListener('scroll',scrollHandler);
+
+ // Infinity scroll
 
 function limitNotify() {
   
@@ -144,12 +155,14 @@ function limitNotify() {
 
 }
 
-window.addEventListener(
-  'scroll',
-  throttle(function () {
+function loadMoreHandler () {
     // Check if the user has reached the bottom of the page
 
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+    const distanceToBottom = document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
+     console.log(`document.documentElement.scrollHeight: ${document.documentElement.scrollHeight}`);
+     console.log(`window.innerHeight: ${window.innerHeight}`);
+     console.log(`window.scrollY: ${window.scrollY}`);
+    if (distanceToBottom < 200) {
      
       if (refs.page < refs.totalPages) {
         // Check if there are more pages to load
@@ -162,8 +175,7 @@ window.addEventListener(
         }
       }
     }
-  }, refs.SCROLL_THROTTLE_INTERVAL)
-);
+  }
 
 async function fetchAndRenderImages() {
   try {
